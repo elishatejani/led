@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>ESP32 LED Control</title>
+
+    <!-- MQTT.js -->
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
+    <style>
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f2f2f2;
+            text-align: center;
+            padding-top: 60px;
+        }
+
+        .container {
+            background: white;
+            width: 400px;
+            max-width: 90%;
+            margin: auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        #status {
+            margin: 20px;
+            font-weight: bold;
+        }
+
+        button {
+            width: 130px;
+            padding: 15px;
+            margin: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+
+        #onButton {
+            background: #28a745;
+            color: white;
+        }
+
+        #offButton {
+            background: #dc3545;
+            color: white;
+        }
+
+        button:disabled {
+            background: #999;
+            cursor: not-allowed;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 16px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container">
+
+        <h1>ESP32 LED Control</h1>
+
+        <p>
+            Control the Wokwi ESP32 LED using MQTT
+        </p>
+
+        <div id="status">
+            Connecting to MQTT...
+        </div>
+
+        <button id="onButton" disabled>
+            LED ON
+        </button>
+
+        <button id="offButton" disabled>
+            LED OFF
+        </button>
+
+        <div id="message">
+            Waiting for connection...
+        </div>
+
+    </div>
+
+
+    <script>
+
+        // =====================================
+        // MQTT CONFIGURATION
+        // =====================================
+
+        const MQTT_BROKER =
+            "wss://broker.emqx.io:8084/mqtt";
+
+        const MQTT_TOPIC =
+            "ali/wokwi/esp32/led";
+
+
+        // =====================================
+        // HTML ELEMENTS
+        // =====================================
+
+        const statusElement =
+            document.getElementById("status");
+
+        const messageElement =
+            document.getElementById("message");
+
+        const onButton =
+            document.getElementById("onButton");
+
+        const offButton =
+            document.getElementById("offButton");
+
+
+        // =====================================
+        // MQTT CLIENT
+        // =====================================
+
+        const client = mqtt.connect(MQTT_BROKER, {
+
+            // Unique browser MQTT client ID
+            clientId:
+                "WebClient-" +
+                Math.random()
+                    .toString(16)
+                    .substring(2),
+
+            clean: true,
+
+            reconnectPeriod: 5000,
+
+            connectTimeout: 10000
+
+        });
+
+
+        // =====================================
+        // MQTT CONNECTED
+        // =====================================
+
+        client.on("connect", function () {
+
+            console.log("Connected to MQTT broker");
+
+            statusElement.innerText =
+                "MQTT Connected";
+
+            statusElement.style.color =
+                "green";
+
+            onButton.disabled = false;
+            offButton.disabled = false;
+
+            messageElement.innerText =
+                "Ready to control the LED";
+
+        });
+
+
+        // =====================================
+        // MQTT ERROR
+        // =====================================
+
+        client.on("error", function (error) {
+
+            console.error(
+                "MQTT Error:",
+                error
+            );
+
+            statusElement.innerText =
+                "MQTT Connection Error";
+
+            statusElement.style.color =
+                "red";
+
+        });
+
+
+        // =====================================
+        // MQTT DISCONNECTED
+        // =====================================
+
+        client.on("close", function () {
+
+            statusElement.innerText =
+                "MQTT Disconnected";
+
+            statusElement.style.color =
+                "red";
+
+            onButton.disabled = true;
+            offButton.disabled = true;
+
+        });
+
+
+        // =====================================
+        // LED ON
+        // =====================================
+
+        onButton.addEventListener(
+            "click",
+            function () {
+
+                client.publish(
+                    MQTT_TOPIC,
+                    "ON",
+                    {
+                        qos: 0,
+                        retain: false
+                    }
+                );
+
+                messageElement.innerText =
+                    "ON command sent";
+
+            }
+        );
+
+
+        // =====================================
+        // LED OFF
+        // =====================================
+
+        offButton.addEventListener(
+            "click",
+            function () {
+
+                client.publish(
+                    MQTT_TOPIC,
+                    "OFF",
+                    {
+                        qos: 0,
+                        retain: false
+                    }
+                );
+
+                messageElement.innerText =
+                    "OFF command sent";
+
+            }
+        );
+
+    </script>
+
+</body>
+
+</html>
